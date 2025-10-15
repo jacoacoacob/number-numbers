@@ -29,21 +29,103 @@
       padding: 8px;
       font-size: 20px;
     }
+
+    div {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      white-space: pre-wrap;
+    }
+
+    .sans-serif {
+      /* visibility: hidden; */
+    }
+    
+    .sans-serif .sans-serif-child {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      display: inline-block;
+      background-color: #ddd;
+      color: #223;
+    }
+
+    .monospace {
+      /* visibility: hidden; */
+    }
+    
+    .monospace .monospace-child {
+      font-family: 'Courier New', Courier, monospace;
+      display: inline-block;
+      background-color: #ddd;
+      color: #223;
+    }
   </style>
 </head>
 <body>
   <input type="text">
-  <pre>
+  <div>
 
 
 
 
-  </pre>
+  </div>
+  <div class="sans-serif">
+    <div class="sans-serif-child" data-char="space">&nbsp;</div>
+    <div class="sans-serif-child" data-char="1">1</div>
+    <div class="sans-serif-child" data-char="2">2</div>
+    <div class="sans-serif-child" data-char="3">3</div>
+    <div class="sans-serif-child" data-char="4">4</div>
+    <div class="sans-serif-child" data-char="5">5</div>
+    <div class="sans-serif-child" data-char="6">6</div>
+    <div class="sans-serif-child" data-char="7">7</div>
+    <div class="sans-serif-child" data-char="8">8</div>
+    <div class="sans-serif-child" data-char="9">9</div>
+    <div class="sans-serif-child" data-char="0">0</div>
+  </div>
+
+  <div class="monospace">
+    <div class="monospace-child" data-char="space">&nbsp;</div>
+    <div class="monospace-child" data-char="1">1</div>
+    <div class="monospace-child" data-char="2">2</div>
+    <div class="monospace-child" data-char="3">3</div>
+    <div class="monospace-child" data-char="4">4</div>
+    <div class="monospace-child" data-char="5">5</div>
+    <div class="monospace-child" data-char="6">6</div>
+    <div class="monospace-child" data-char="7">7</div>
+    <div class="monospace-child" data-char="8">8</div>
+    <div class="monospace-child" data-char="9">9</div>
+    <div class="monospace-child" data-char="0">0</div>
+  </div>
   <script>
     const input = document.querySelector("input");
-    const output = document.querySelector("pre");
-    
-    const charMap = {
+    const output = document.querySelector("div");
+
+    const NB_SPACE = "\u00A0";
+
+    const computedSansSerifCharWidths = {};
+
+    document.querySelectorAll(".sans-serif-child").forEach((div) => {
+      computedSansSerifCharWidths[div.dataset.char] = Number.parseFloat(
+        window.getComputedStyle(div).width.replace("px", ""),
+        10
+      );
+    });
+
+    const computedMonospaceCharWidths = {};
+
+    document.querySelectorAll(".monospace-child").forEach((div) => {
+      computedMonospaceCharWidths[div.dataset.char] = Number.parseFloat(
+        window.getComputedStyle(div).width.replace("px", ""),
+        10
+      );
+    });
+
+    const computedSpaceWidthDelta = computedMonospaceCharWidths.space / computedSansSerifCharWidths.space;
+
+    console.log({
+      sansSerif: computedSansSerifCharWidths,
+      monospace: computedMonospaceCharWidths,
+      computedSpaceWidthDelta
+    })
+
+    const CHAR_MAP = transformCharMap({
       "/": [
         "    /",
         "   / ",
@@ -135,6 +217,80 @@
         "    9",
         "    9",
       ],
+    });
+
+
+    function prependSpaces(nSpaces, value) {
+      return NB_SPACE.repeat(nSpaces) + value;
+    }
+
+    function appendSpaces(nSpaces, value) {
+      return value + NB_SPACE.repeat(nSpaces);
+    }
+
+    function transformSpaces(char, row) {
+
+    }
+
+    function normalize(char, row) {
+      const sansSerifRowNaturalWidth = row.split("").reduce(
+        (accum, character) => accum + computedSansSerifCharWidths[char === " " ? "space" : char] ?? 0,
+        0
+      );
+
+      const monospaceRowNaturalWidth = row.split("").reduce(
+        (accum, character) => accum + computedMonospaceCharWidths[char === " " ? "space" : char] ?? 0,
+        0
+      );
+
+      return {
+        char,
+        row,
+        /** the number of pixels this row will take up when font-family is sans-serif */
+        sansSerifRowNaturalWidth,
+        monospaceRowNaturalWidth
+      }
+    }
+
+    function transformCharMap(charMap) {
+      const result = { ...charMap }
+
+      Object.keys(result).forEach((key) => {
+        const charRows = result[key];
+
+        console.log(normalize(key, charRows[0]))
+
+        if (key === "1") {
+          charRows[1] = NB_SPACE.repeat(Math.ceil(computedSpaceWidthDelta / computedSansSerifCharWidths["space"])) + charRows[1]
+          charRows[2] = NB_SPACE.repeat(Math.ceil(computedSpaceWidthDelta / computedSansSerifCharWidths["space"])) + charRows[2]
+          charRows[3] = NB_SPACE.repeat(Math.ceil(computedSpaceWidthDelta / computedSansSerifCharWidths["space"])) + charRows[3]
+          // charRows[1] = prependSpaces(1, charRows[1]);
+          // charRows[2] = prependSpaces(1, charRows[2]);
+          // charRows[3] = prependSpaces(1, charRows[3]);
+          
+          charRows[0] = charRows[0] + NB_SPACE.repeat(Math.ceil(1 * (computedSpaceWidthDelta / computedSansSerifCharWidths["space"])))
+          charRows[1] = charRows[1] + NB_SPACE.repeat(Math.ceil(1 * (computedSpaceWidthDelta / computedSansSerifCharWidths["space"])))
+          charRows[2] = charRows[2] + NB_SPACE.repeat(Math.ceil(1 * (computedSpaceWidthDelta / computedSansSerifCharWidths["space"])))
+          charRows[3] = charRows[3] + NB_SPACE.repeat(Math.ceil(1 * (computedSpaceWidthDelta / computedSansSerifCharWidths["space"])))
+          // charRows[0] = appendSpaces(1, charRows[0]);
+          // charRows[1] = appendSpaces(2, charRows[1]);
+          // charRows[2] = appendSpaces(2, charRows[2]);
+          // charRows[3] = appendSpaces(2, charRows[3]);
+        }
+
+        if (key === "2") {
+          charRows[1] = prependSpaces(4, charRows[1]);
+          charRows[3] = appendSpaces(4, charRows[3]);
+        }
+
+        if (key === "3") {
+          charRows[1] = prependSpaces(4, charRows[1]);
+          charRows[2] = prependSpaces(2, charRows[2]);
+          charRows[3] = prependSpaces(4, charRows[3]);
+        }
+      });
+
+      return result;
     }
 
     input.addEventListener("input", (ev) => {
@@ -155,13 +311,13 @@
 
           const char = ev.target.value[charIndex];
           
-          if (Object.hasOwnProperty.call(charMap, char)) {
+          if (Object.hasOwnProperty.call(CHAR_MAP, char)) {
             
-            rowText += charMap[char][rowIndex];
+            rowText += CHAR_MAP[char][rowIndex];
             
             if (charIndex < ev.target.value.length - 1) {
-
-              rowText += "  ";
+              
+              rowText += NB_SPACE.repeat(4);
             
             }
           }
