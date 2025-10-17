@@ -263,11 +263,16 @@
 
         }
 
-        result += "\n";
+        if (lineIndex < lines.length - 1) {
+
+          result += "\n";
+          
+        }
 
       }
 
-      navigator.clipboard.writeText(result)
+      copyText(result);
+
     }
 
     function handleCopyMonospace() {
@@ -278,7 +283,7 @@
         copyMonospace.classList.remove("confirm-copy");
       }, 2000);
 
-      navigator.clipboard.writeText(output.textContent);
+      copyText(output.textContent);
 
     }
 
@@ -314,7 +319,6 @@
       }
 
       output.textContent = result;
-
     }
 
     function empty(element) {
@@ -350,6 +354,28 @@
       );
 
       return monospaceSpaceWidth / sansSerifSpaceWidth;
+    }
+
+    function copyText(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+
+      textarea.style.transform = "translateX(-4000px)"
+
+      document.body.appendChild(textarea);
+
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+
+      try {
+        document.execCommand("copy");
+        console.log("Copy Success");
+      } catch (error) {
+        alert("Unable to copy:" + error)
+      }
+
+      document.body.removeChild(textarea);
     }
 
   </script>
