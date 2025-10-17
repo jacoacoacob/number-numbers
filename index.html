@@ -128,10 +128,20 @@
     copySansSerif.addEventListener("click", handleCopySansSerif);
     copyMonospace.addEventListener("click", handleCopyMonospace);
 
-    const NB_SPACE = "\u00A0";
     const SPACE = " ";
+    const NB_SPACE = "\u00A0";
+    const CHECK = "\u2713";
 
     const CHAR_MAP = {
+      "✅": [
+        
+        SPACE + SPACE + SPACE + SPACE + CHECK,
+        SPACE + SPACE + SPACE + CHECK + SPACE,
+        CHECK + SPACE + CHECK + SPACE + SPACE,
+        SPACE + CHECK + SPACE + SPACE + SPACE,
+        SPACE + SPACE + SPACE + SPACE + SPACE,
+
+      ],
       "/": [
         "    /",
         "   / ",
@@ -316,6 +326,7 @@
         }
 
         result += rowText + "\n";
+
       }
 
       output.textContent = result;
