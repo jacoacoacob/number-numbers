@@ -30,23 +30,56 @@
       font-size: 20px;
     }
 
-    pre {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      white-space: pre-wrap;
+    button {
+      cursor: pointer;
+      outline: none;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 8px;
     }
 
-    #output {
-      /* display: flex; */
-      /* gap: 8px; */
-      /* justify-content: center; */
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .button-container > button {
+      position: relative;
+      font-size: 16px;
+    }
+
+    #copy-sans-serif {
+      background-color: #ddd; 
+      color: #223;
+    }
+
+    #copy-sans-serif span {
+      background-color: #ddd; 
+      color: #223;
+    }
+
+    .button-container > button > .confirmation {
+      visibility: hidden;
+      position: absolute;
+      left: 48%;
+      top: 20%;
+    }
+
+    .button-container > button.confirm-copy > .confirmation {
+      visibility: visible;
+    }
+
+    .button-container > button.confirm-copy > .default-text {
+      visibility: hidden;
     }
 
     .sans-serif,
     .monospace {
-      /* visibility: hidden; */
+      visibility: hidden;
       display: flex;
       gap: 4px;
-      /* transform: translateX(-2000px); */
+      transform: translateX(-2000px);
     }
     
     .sans-serif div {
@@ -56,20 +89,27 @@
       color: #223;
     }
 
-    .monospace {
-      /* visibility: hidden; */
-    }
-    
     .monospace div {
       font-family: 'Courier New', Courier, monospace;
       display: inline-block;
       background-color: #ddd;
       color: #223;
     }
+
   </style>
 </head>
 <body>
-  <input id="input" type="text">
+  <input id="input" type="text" placeholder="type sum numb3rs">
+  <div class="button-container">
+    <button id="copy-monospace">
+      <span class="default-text">Copy monospace</span>
+      <span class="confirmation">&checkmark;</span>
+    </button>
+    <button id="copy-sans-serif">
+      <span class="default-text">Copy sans-serif</span>
+      <span class="confirmation">&checkmark;</span>
+    </button>
+  </div>
   <pre id="output">
 
 
@@ -81,38 +121,15 @@
   <script>
     const input = document.querySelector("input");
     const output = document.querySelector("#output");
+    const copySansSerif = document.querySelector("#copy-sans-serif");
+    const copyMonospace = document.querySelector("#copy-monospace");
 
     input.addEventListener("input", handleInput);
-
-    class LinkedList {
-      constructor() {
-        this.head = null;
-        this.tail = null;
-      }
-
-      push(value) {
-        if (!this.tail && !this.head) {
-          const node = { value, prev: null, next: null };
-          this.tail = node;
-          this.head = node;
-        } else {
-          const newHead = { value, prev: this.head, next: null };
-          this.head.next = newHead;
-          this.head = newHead;
-        }
-      }
-
-      iterate(callback) {
-        let node = this.tail;
-        
-        while (node) {
-          callback(node);
-          node = node.next;
-        }
-      }
-    }
+    copySansSerif.addEventListener("click", handleCopySansSerif);
+    copyMonospace.addEventListener("click", handleCopyMonospace);
 
     const NB_SPACE = "\u00A0";
+    const SPACE = " ";
 
     const CHAR_MAP = {
       "/": [
@@ -208,7 +225,105 @@
       ],
     };
 
-    function computeCharWidths() {
+    const MONO_TO_SANS_SPACE = computeMonospaceToSansSerifSpace();
+
+    function handleCopySansSerif() {
+
+      copySansSerif.classList.add("confirm-copy");
+
+      setTimeout(() => {
+        copySansSerif.classList.remove("confirm-copy");
+      }, 2000);
+
+      const lines = output.textContent.split("\n");
+
+      let result = "";
+
+      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        
+        const line = lines[lineIndex];
+
+        let spaceCount = 0;
+
+        for (let columnIndex = 0; columnIndex < line.length; columnIndex++) {
+
+          const char = line[columnIndex];
+
+          if (char === SPACE) {
+            
+            spaceCount += 1;
+
+          } else {
+
+            result += " ".repeat(Math.round(spaceCount * MONO_TO_SANS_SPACE)) + char;
+
+            spaceCount = 0;
+
+          }
+
+        }
+
+        result += "\n";
+
+      }
+
+      navigator.clipboard.writeText(result)
+    }
+
+    function handleCopyMonospace() {
+
+      copyMonospace.classList.add("confirm-copy");
+
+      setTimeout(() => {
+        copyMonospace.classList.remove("confirm-copy");
+      }, 2000);
+
+      navigator.clipboard.writeText(output.textContent);
+
+    }
+
+    function handleInput(ev) {
+
+      empty(output);
+
+      let result = "";
+
+      for (let rowIndex = 0; rowIndex < 5; rowIndex++) {
+        
+        let rowText = "";
+
+        for (let charIndex = 0; charIndex < ev.target.value.length; charIndex++) {
+
+          const char = ev.target.value[charIndex].toLowerCase();
+
+          if (CHAR_MAP[char]) {
+
+            rowText += CHAR_MAP[char][rowIndex];
+
+          }
+
+          if (charIndex < ev.target.value.length - 1) {
+
+            rowText += " ".repeat(Math.floor(MONO_TO_SANS_SPACE));
+
+          }
+
+        }
+
+        result += rowText + "\n";
+      }
+
+      output.textContent = result;
+
+    }
+
+    function empty(element) {
+      while (element.lastChild) {
+        element.removeChild(element.lastChild);
+      }
+    }
+
+    function computeMonospaceToSansSerifSpace() {
       const sansSerifContainer = document.querySelector(".sans-serif");
       const monospaceContainer = document.querySelector(".monospace");
 
@@ -219,276 +334,24 @@
         return div;
       }
 
-      sansSerifContainer.appendChild(createDiv(NB_SPACE, "space"));
-      monospaceContainer.appendChild(createDiv(NB_SPACE, "space"));
+      const monospaceDiv = createDiv(NB_SPACE, "space");
+      const sansSerifDiv = createDiv(NB_SPACE, "space");
 
-      Object.keys(CHAR_MAP).forEach((char) => {
-        sansSerifContainer.appendChild(createDiv(char));
-        monospaceContainer.appendChild(createDiv(char));
-      });
+      sansSerifContainer.appendChild(sansSerifDiv);
+      monospaceContainer.appendChild(monospaceDiv);
 
-      const sansSerifCharWidth = {};
-      const monospaceCharWidth = {};
-
-      document.querySelectorAll(".sans-serif div").forEach((div) => {
-        sansSerifCharWidth[div.dataset.char] = Number.parseFloat(
-          window.getComputedStyle(div).width.replace("px", ""),
-          10,
-        );
-      });
-
-      document.querySelectorAll(".monospace div").forEach((div) => {
-        console.log(div.dataset.char)
-        monospaceCharWidth[div.dataset.char] = Number.parseFloat(
-          window.getComputedStyle(div).width.replace("px", ""),
-          10,
-        );
-      });
-
-      return Object.fromEntries(
-        ["space"].concat(Object.keys(CHAR_MAP)).map((char) => [
-          char,
-          {
-            sansSerif: sansSerifCharWidth[char],
-            monospace: monospaceCharWidth[char],
-          }
-        ])
+      const monospaceSpaceWidth = Number.parseFloat(
+        window.getComputedStyle(monospaceDiv).width.replace("px", ""),
+        10,
       );
+      const sansSerifSpaceWidth = Number.parseFloat(
+        window.getComputedStyle(sansSerifDiv).width.replace("px", ""),
+        10,
+      );
+
+      return monospaceSpaceWidth / sansSerifSpaceWidth;
     }
 
-    const CHAR_WIDTHS = computeCharWidths();
-
-    const MONO_TO_SANS_SPACE = CHAR_WIDTHS.space.monospace / CHAR_WIDTHS.space.sansSerif;
-
-    function empty(element) {
-      while (element.lastChild) {
-        element.removeChild(element.lastChild);
-      }
-    }
-
-    function transform(char) {
-      const rows = CHAR_MAP[char].map((row) => row);
-
-      if (char === "0") {
-        rows[1] = rows[1][0] + NB_SPACE.repeat(Math.round(MONO_TO_SANS_SPACE * 3)) + rows[1][4];
-        rows[2] = rows[2][0] + NB_SPACE.repeat(Math.round(MONO_TO_SANS_SPACE * 3)) + rows[2][4];
-        rows[3] = rows[3][0] + NB_SPACE.repeat(Math.round(MONO_TO_SANS_SPACE * 3)) + rows[3][4];
-      }
-
-      if (char === "1") {
-        rows[0] = rows[0] + NB_SPACE.repeat(Math.floor(MONO_TO_SANS_SPACE))
-        rows[1] = NB_SPACE.repeat(Math.round(MONO_TO_SANS_SPACE * 2)) + rows[1] + NB_SPACE.repeat(Math.round(MONO_TO_SANS_SPACE * 2))
-        rows[2] = NB_SPACE.repeat(Math.round(MONO_TO_SANS_SPACE * 2)) + rows[2] + NB_SPACE.repeat(Math.round(MONO_TO_SANS_SPACE * 2))
-        rows[3] = NB_SPACE.repeat(Math.round(MONO_TO_SANS_SPACE * 2)) + rows[3] + NB_SPACE.repeat(Math.round(MONO_TO_SANS_SPACE * 2))
-      }
-
-      return rows;
-    }
-
-    function handleInput(ev) {
-      empty(output);
-
-      const nodes = new LinkedList();
-
-      ev.target.value.split("").forEach((char, position) => {
-        nodes.push({
-          char,
-          position,
-          fancyChar: CHAR_MAP[char],
-        });
-      });
-
-      let result = "";
-
-      for (let rowIndex = 0; rowIndex < 5; rowIndex++) {
-          
-        let rowText = "";
-
-        nodes.iterate(({ value, next }) => {
-          
-          rowText += transform(value.char)[rowIndex] + NB_SPACE.repeat(Math.floor(MONO_TO_SANS_SPACE) * 2);
-
-        });
-
-        result += rowText + "\n";
-      }
-
-      output.textContent = result;
-
-    }
-
-
-
-    // function monoToSans(nSpaces) {
-    //   return Math.floor(
-    //     COMPUTED_MONOSPACE_SANS_SERIF_WIDTH_DELTA * nSpaces
-    //   )
-    // }
-
-    // function prependSpaces(nSpaces, value) {
-    //   return NB_SPACE.repeat(monoToSans(nSpaces)) + value;
-    // }
-
-    // function appendSpaces(nSpaces, value) {
-    //   return value + NB_SPACE.repeat(monoToSans(nSpaces));
-    // }
-
-    // function calculateRowWidth(rowText) {
-    //   const { sansSerifWidth, monospaceWidth } = rowText.split("").reduce((accum, char) => {
-    //     return {
-    //       sansSerifWidth: accum.sansSerifWidth + (computedSansSerifCharWidths[char === " " ? "space" : char] ?? 0),
-    //       monospaceWidth: accum.monospaceWidth + (computedMonospaceCharWidths[char === " " ? "space" : char] ?? 0),
-    //     }
-    //   }, {
-    //     sansSerifWidth: 0,
-    //     monospaceWidth: 0,
-    //   });
-
-    //   return {
-    //     monospaceWidth: Math.round(monospaceWidth),
-    //     sansSerifWidth: Math.round(sansSerifWidth),
-    //   }
-    // }
-
-    // function normalize(char, row) {
-    //   const sansSerifRowNaturalWidth = row.split("").reduce(
-    //     (accum, character) => accum + computedSansSerifCharWidths[char === " " ? "space" : char] ?? 0,
-    //     0
-    //   );
-
-    //   const monospaceRowNaturalWidth = row.split("").reduce(
-    //     (accum, character) => accum + computedMonospaceCharWidths[char === " " ? "space" : char] ?? 0,
-    //     0
-    //   );
-
-    //   return {
-    //     char,
-    //     row,
-    //     /** the number of pixels this row will take up when font-family is sans-serif */
-    //     sansSerifRowNaturalWidth,
-    //     monospaceRowNaturalWidth
-    //   }
-    // }
-
-    // function transformCharMapToSansSerif(charMap) {
-
-    //   const result = { ...charMap }
-
-    //   Object.keys(result).forEach((key) => {
-    //     const charRows = result[key];
-
-    //     if (key === "1") {
-    //       const { sansSerifWidth, monospaceWidth } = calculateRowWidth(charRows[0])
-
-    //       const nSpaces = (monospaceWidth - sansSerifWidth) / Math.floor(COMPUTED_MONOSPACE_SANS_SERIF_WIDTH_DELTA);
-
-    //       console.log({ nSpaces, sansSerifWidth, monospaceWidth, delta: Math.floor(COMPUTED_MONOSPACE_SANS_SERIF_WIDTH_DELTA) })
-
-    //       charRows[0] = charRows[0] + NB_SPACE.repeat(nSpaces);
-
-
-    //       charRows[1] = NB_SPACE.repeat(1) + charRows[1] + NB_SPACE.repeat(1);
-    //       charRows[2] = NB_SPACE.repeat(1) + charRows[2] + NB_SPACE.repeat(1);
-    //       charRows[3] = NB_SPACE.repeat(1) + charRows[3] + NB_SPACE.repeat(1);
-    //       // charRows[1] = prependSpaces(1, charRows[1]);
-    //       // charRows[2] = prependSpaces(1, charRows[2]);
-    //       // charRows[3] = prependSpaces(1, charRows[3]);
-        
-    //       // charRows[1] = appendSpaces(1, charRows[1]);
-    //       // charRows[2] = appendSpaces(1, charRows[2]);
-    //       // charRows[3] = appendSpaces(1, charRows[3]);
-    //     }
-
-    //     if (key === "2") {
-    //       charRows[1] = prependSpaces(2, charRows[1]);
-    //       charRows[3] = appendSpaces(2, charRows[3]);
-    //     }
-
-    //     if (key === "3") {
-    //       charRows[1] = prependSpaces(4, charRows[1]);
-    //       charRows[2] = prependSpaces(2, charRows[2]);
-    //       charRows[3] = prependSpaces(4, charRows[3]);
-    //     }
-    //   });
-
-    //   return result;
-    // }
-
-    // input.addEventListener("input", renderCharacters);
-
-    // function renderCharacters(ev) {
-    //   while (output.lastChild) {
-      
-    //     output.removeChild(output.lastChild);
-      
-    //   }
-
-    //   let result = "";
-
-    //   for (let rowIndex = 0; rowIndex < 5; rowIndex++) {
-        
-    //     const rowText = [];
-
-    //     for (let charIndex = 0; charIndex < ev.target.value.length; charIndex++) {
-
-    //       const char = ev.target.value[charIndex];
-          
-    //       if (Object.hasOwnProperty.call(CHAR_MAP, char)) {
-            
-    //         rowText.push([CHAR_MAP[char][rowIndex]]);
-            
-    //         if (charIndex < ev.target.value.length - 1) {
-
-    //           rowText.push([NB_SPACE.repeat(4)])
-            
-    //         }
-    //       }
-    //     }
-
-    //     console.table({ rowText: rowText.flat().join(""), ...calculateRowWidth(rowText.flat().join("")) })
-    //     // console.table({ rowText, ...calculateRowWidth(rowText.flatMap().join("")) })
-
-    //     result += rowText.flat().join("") + "\n";
-    //   }
-
-    //   output.textContent = result;
-    // }
-
-    // // input.addEventListener("input", (ev) => {
-      
-    // //   while (output.lastChild) {
-      
-    // //     output.removeChild(output.lastChild);
-      
-    // //   }
-
-    // //   let result = "";
-
-    // //   for (let rowIndex = 0; rowIndex < 5; rowIndex++) {
-        
-    // //     let rowText = "";
-
-    // //     for (let charIndex = 0; charIndex < ev.target.value.length; charIndex++) {
-
-    // //       const char = ev.target.value[charIndex];
-          
-    // //       if (Object.hasOwnProperty.call(CHAR_MAP, char)) {
-            
-    // //         rowText += CHAR_MAP[char][rowIndex];
-            
-    // //         if (charIndex < ev.target.value.length - 1) {
-
-    // //           rowText += NB_SPACE.repeat(4);
-            
-    // //         }
-    // //       }
-    // //     }
-        
-    // //     result += rowText + "\n";
-    // //   }
-
-    // //   output.textContent = result;
-    // })
   </script>
 </body>
 </html>
